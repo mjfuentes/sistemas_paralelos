@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 
 //Para calcular tiempo
 double dwalltime(){
@@ -51,7 +52,7 @@ int main(int argc,char*argv[]){
 	A=(double*)malloc(sizeof(double)*N*N);
 	B=(double*)malloc(sizeof(double)*N*N);
 	C=(double*)malloc(sizeof(double)*N*N);
-	D=(double*)malloc(sizeof(double)*N*N);
+	D=(double*)malloc(sizeof(double)*N);
 
    //Inicializa las matrices A y B en 1, C en diagonal
 	for(i=0;i<N;i++){
@@ -59,10 +60,7 @@ int main(int argc,char*argv[]){
 			A[i*N+j] = rand()%10;
 			B[j*N+i] = rand()%10;
 			if (i == j){
-				D[i*N+j] = rand()%10;
-			}
-			else {
-				D[i*N+j] = 0;
+				D[i] = rand()%10;
 			}
 		}
 	}
@@ -83,7 +81,7 @@ int main(int argc,char*argv[]){
          for(k=0;k<N;k++){
             C[i*N+j] += A[i*N+k] * B[j*N+k];
          }
-         C[i*N+j] = C[i*N+j] * D[j*N+j]; 
+         C[i*N+j] = C[i*N+j] * D[j]; 
       }
    }   
 
@@ -96,10 +94,10 @@ int main(int argc,char*argv[]){
 
 	int maxA,minA,maxB,minB,totA,totB;
 	double factor, avgA, avgB;
-	maxA = -1;
-	maxB = -1;
-	minB = 99999;
-	minA = 99999;
+	maxA = INT_MIN;
+	maxB = INT_MIN;
+	minB = INT_MAX;
+	minA = INT_MAX;
 	totA = 0;
 	totB = 0;
 
@@ -144,6 +142,10 @@ int main(int argc,char*argv[]){
 	// *************** ETAPA 3 ********************
 	// ********************************************
 
+	
+	
+	// FRANCO  -- > burbuja para el secuencial
+	// ENZO    -- > merge sort, cada cachito un hilo. MEJOR OPCION, RECURSIVO. MAS FACIL PARA HACERLO PARALELO
    
 
 
