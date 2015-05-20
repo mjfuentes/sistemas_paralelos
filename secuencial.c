@@ -59,10 +59,8 @@ int main(int argc,char*argv[]){
 		for(j=0;j<N;j++){
 			A[i*N+j] = rand()%10;
 			B[j*N+i] = rand()%10;
-			if (i == j){
-				D[i] = rand()%10;
-			}
 		}
+		D[i] = rand()%10;
 	}
 
 	// imprimeMatriz(A,N,1);
