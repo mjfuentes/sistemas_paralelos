@@ -73,18 +73,18 @@ int main(int argc,char*argv[]){
 
 	timetick = dwalltime();
 
-   for(i=0;i<N;i++){
-      for(j=0;j<N;j++){
-         C[i*N+j] = 0;
-         for(k=0;k<N;k++){
-            C[i*N+j] += A[i*N+k] * B[j*N+k];
-         }
-         C[i*N+j] = C[i*N+j] * D[j]; 
-      }
-   }   
+	for(i=0;i<N;i++){
+		for(j=0;j<N;j++){
+			C[i*N+j] = 0;
+			for(k=0;k<N;k++){
+				C[i*N+j] += A[i*N+k] * B[j*N+k];
+			}
+			C[i*N+j] = C[i*N+j] * D[j]; 
+		}
+	}   
 
 	// imprimeMatriz(C,N,1);
-	printf("Tiempo en segundos de multiplicacion de matrices: %f\n", dwalltime() - timetick);  
+	printf("Tiempo en segundos de multiplicacion de matrices: %f\n\n", dwalltime() - timetick);  
 
 	// ********************************************
 	// *************** ETAPA 2 ********************
@@ -102,54 +102,75 @@ int main(int argc,char*argv[]){
 	timetick = dwalltime();
 
 	for(i=0;i<N;i++){
-      for(j=0;j<N;j++){
-         if (A[i*N+j] > maxA){
-         	maxA = A[i*N+j];
-         } 
-         if (A[i*N+j] < minA){
-         	minA = A[i*N+j];
-         }
-         if (B[j*N+i] > maxB){
-         	maxB = B[j*N+i];
-         } 
-         if (B[j*N+i] < minB){
-         	minB = B[j*N+i];
-         }
-         totA += A[i*N+j];
-         totB += B[j*N+i];
-      }
-   }
+		for(j=0;j<N;j++){
+			if (A[i*N+j] > maxA){
+				maxA = A[i*N+j];
+			} 
+			if (A[i*N+j] < minA){
+				minA = A[i*N+j];
+			}
+			if (B[j*N+i] > maxB){
+				maxB = B[j*N+i];
+			} 
+			if (B[j*N+i] < minB){
+				minB = B[j*N+i];
+			}
+			totA += A[i*N+j];
+			totB += B[j*N+i];
+		}
+	}
 
-   avgA = (double) totA / (N * N);
-   avgB = (double) totB / (N * N);
-   double a = maxA - minA;
-   double b = maxB - minB;
-   factor = ((a*a)/avgA) * ((b*b)/avgB);
+	avgA = (double) totA / (N * N);
+	avgB = (double) totB / (N * N);
+	double a = maxA - minA;
+	double b = maxB - minB;
+	factor = ((a*a)/avgA) * ((b*b)/avgB);
 
 	for(i=0;i<N;i++){
-      for(j=0;j<N;j++){
-      	C[i*N+j] = C[i*N+j] * factor;
-      }
-   }
+		for(j=0;j<N;j++){
+			C[i*N+j] = C[i*N+j] * factor;
+		}
+	}
 
-   printf("Tiempo en segundos de multiplicacion por factor: %f\n", dwalltime() - timetick);  
+	printf("Tiempo en segundos de multiplicacion por factor: %f\n\n", dwalltime() - timetick);  
 
-  	//imprimeMatriz(C,N,1);
+	printf("Antes de la ordenacion: \n");
+  	imprimeMatriz(C,N,1);
 
 	// ********************************************
 	// *************** ETAPA 3 ********************
 	// ********************************************
 
-	
-	
+	int l;
+
+	for(i=0;i<N;i++){
+		for (l=0;l<N-1;l++){
+			for(j=0;j<N-l;j++){
+				if (C[i+j*N] < C[i+(j+1)*N]){
+					for(k=i;k<N;k++){
+						double temp = C[k+j*N];
+						C[k+j*N] = C[k+(j+1)*N];
+						C[k+(j+1)*N] = temp;
+					}
+				}
+			}
+		}
+	}
+
+	printf("Despues de la ordenacion: \n");
+  	imprimeMatriz(C,N,1);
+
+
+
+
 	// FRANCO  -- > burbuja para el secuencial
 	// ENZO    -- > merge sort, cada cachito un hilo. MEJOR OPCION, RECURSIVO. MAS FACIL PARA HACERLO PARALELO
-   
 
 
-	free(A);
-	free(B);
-	free(C);
-	free(D);
-	return(0);
+
+free(A);
+free(B);
+free(C);
+free(D);
+return(0);
 }
