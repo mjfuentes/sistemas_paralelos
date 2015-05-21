@@ -134,8 +134,8 @@ int main(int argc,char*argv[]){
 
 	printf("Tiempo en segundos de multiplicacion por factor: %f\n\n", dwalltime() - timetick);  
 
-	printf("Antes de la ordenacion: \n");
-  	imprimeMatriz(C,N,1);
+	// printf("Antes de la ordenacion: \n");
+ //  	imprimeMatriz(C,N,1);
 
 	// ********************************************
 	// *************** ETAPA 3 ********************
@@ -146,27 +146,12 @@ int main(int argc,char*argv[]){
 	pos=(int*)malloc(sizeof(int)*N);
 	double temp;int pos_temp;
 
-	/////////////////////////////////////////////
-	// Sin utilizar vectores, todo sobre la matriz
-	//////////////////////////////////////////////
-	// for(i=0;i<N;i++){
-	// 	for (l=0;l<N-1;l++){
-	// 		for(j=0;j<N-l;j++){
-	// 			if (C[i+j*N] < C[i+(j+1)*N]){
-	// 				for(k=i;k<N;k++){
-	// 					temp = C[k+j*N];
-	// 					C[k+j*N] = C[k+(j+1)*N];
-	// 					C[k+(j+1)*N] = temp;
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 
 	///////////////////////////////////////////////////////
 	// Utilizando vectores para disminuir fallo en cache //
 	///////////////////////////////////////////////////////
+
+	timetick = dwalltime();
 
 	// Itera por cada una de las columnas
 	for(i=0;i<N;i++){
@@ -192,35 +177,30 @@ int main(int argc,char*argv[]){
 			}
 		}
 
-		// Ordena unicamente la columna 
-		for (l=0;l<N;l++){
-			C[i+l*N] = col[l];
-		}
-
 		////////////////////////////////////////////////////////
 		// Ordena la matriz a partir del vector de posiciones //
 		////////////////////////////////////////////////////////
 
 		//Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
-		// for (k=0;k<N;k++){
-		// 	if (k != pos[k]){
-		// 		for (l=i;l<N;l++){
-		// 			temp = C[l+k*N];
-		// 			C[l+k*N] = C[l+(pos[k]*N)];
-		// 			C[l+(pos[k]*N)] = temp;
-		// 			for (j=k;j<N;j++){
-		// 				if (pos[j]==k){
-		// 					pos[j]=pos[k];
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
-		// printf("pos: %i\n", pos[k]);  
+		for (k=0;k<N;k++){
+			if (k != pos[k]){
+				for (l=i;l<N;l++){
+					temp = C[l+k*N];
+					C[l+k*N] = C[l+(pos[k]*N)];
+					C[l+(pos[k]*N)] = temp;
+					for (j=k;j<N;j++){
+						if (pos[j]==k){
+							pos[j]=pos[k];
+						}
+					}
+				}
+			}
+		} 
 	}
 
-	printf("Despues de la ordenacion: \n");
-  	imprimeMatriz(C,N,1);
+	printf("Tiempo en segundos de ordenacion: %f\n\n", dwalltime() - timetick);  
+	// printf("Despues de la ordenacion: \n");
+ //  	imprimeMatriz(C,N,1);
 
 
 free(A);
