@@ -146,6 +146,9 @@ int main(int argc,char*argv[]){
 	pos=(int*)malloc(sizeof(int)*N);
 	double temp;int pos_temp;
 
+	/////////////////////////////////////////////
+	// Sin utilizar vectores, todo sobre la matriz
+	//////////////////////////////////////////////
 	// for(i=0;i<N;i++){
 	// 	for (l=0;l<N-1;l++){
 	// 		for(j=0;j<N-l;j++){
@@ -159,6 +162,11 @@ int main(int argc,char*argv[]){
 	// 		}
 	// 	}
 	// }
+
+
+	///////////////////////////////////////////////////////
+	// Utilizando vectores para disminuir fallo en cache //
+	///////////////////////////////////////////////////////
 
 	// Itera por cada una de las columnas
 	for(i=0;i<N;i++){
@@ -184,35 +192,35 @@ int main(int argc,char*argv[]){
 			}
 		}
 
+		// Ordena unicamente la columna 
 		for (l=0;l<N;l++){
 			C[i+l*N] = col[l];
 		}
 
+		////////////////////////////////////////////////////////
+		// Ordena la matriz a partir del vector de posiciones //
+		////////////////////////////////////////////////////////
 
-
-		// Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
+		//Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
 		// for (k=0;k<N;k++){
 		// 	if (k != pos[k]){
 		// 		for (l=i;l<N;l++){
 		// 			temp = C[l+k*N];
 		// 			C[l+k*N] = C[l+(pos[k]*N)];
 		// 			C[l+(pos[k]*N)] = temp;
-		// 			pos[k]=pos[k];
+		// 			for (j=k;j<N;j++){
+		// 				if (pos[j]==k){
+		// 					pos[j]=pos[k];
+		// 				}
+		// 			}
 		// 		}
 		// 	}
 		// }
-			// printf("pos: %i\n", pos[k]);  
+		// printf("pos: %i\n", pos[k]);  
 	}
 
 	printf("Despues de la ordenacion: \n");
   	imprimeMatriz(C,N,1);
-
-
-
-
-	// FRANCO  -- > burbuja para el secuencial
-	// ENZO    -- > merge sort, cada cachito un hilo. MEJOR OPCION, RECURSIVO. MAS FACIL PARA HACERLO PARALELO
-
 
 
 free(A);
