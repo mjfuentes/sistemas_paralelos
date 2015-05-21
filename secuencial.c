@@ -141,20 +141,67 @@ int main(int argc,char*argv[]){
 	// *************** ETAPA 3 ********************
 	// ********************************************
 
-	int l;
+	int l;double *col;int *pos;
+	col=(double*)malloc(sizeof(double)*N);
+	pos=(int*)malloc(sizeof(int)*N);
+	double temp;int pos_temp;
 
+	// for(i=0;i<N;i++){
+	// 	for (l=0;l<N-1;l++){
+	// 		for(j=0;j<N-l;j++){
+	// 			if (C[i+j*N] < C[i+(j+1)*N]){
+	// 				for(k=i;k<N;k++){
+	// 					temp = C[k+j*N];
+	// 					C[k+j*N] = C[k+(j+1)*N];
+	// 					C[k+(j+1)*N] = temp;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// Itera por cada una de las columnas
 	for(i=0;i<N;i++){
-		for (l=0;l<N-1;l++){
+
+		// Transforma la columna en un vector
+		for (l=0;l<N;l++){
+			col[l]=C[i+l*N];
+			pos[l]=l;
+		}
+
+		// Utiliza bubble sort para ordenar el vector
+		// Guarda en Col[] los valores del vector ordenados, y en pos[] los indices iniciales del vector ordenados
+		for (l=0;l<N;l++){
 			for(j=0;j<N-l;j++){
-				if (C[i+j*N] < C[i+(j+1)*N]){
-					for(k=i;k<N;k++){
-						double temp = C[k+j*N];
-						C[k+j*N] = C[k+(j+1)*N];
-						C[k+(j+1)*N] = temp;
-					}
+				if (col[j] < col[j+1]){
+					temp = col[j];
+					col[j] = col[j+1];
+					col[j+1] = temp;
+					pos_temp = pos[j];
+					pos[j] = pos[j+1];
+					pos[j+1] = pos_temp;
 				}
 			}
 		}
+
+		for (l=0;l<N;l++){
+			C[i+l*N] = col[l];
+		}
+
+
+
+		// Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
+		// for (k=0;k<N;k++){
+		// 	if (k != pos[k]){
+		// 		for (l=i;l<N;l++){
+		// 			temp = C[l+k*N];
+		// 			C[l+k*N] = C[l+(pos[k]*N)];
+		// 			C[l+(pos[k]*N)] = temp;
+		// 			pos[k]=pos[k];
+		// 		}
+		// 	}
+		// }
+			// printf("pos: %i\n", pos[k]);  
 	}
 
 	printf("Despues de la ordenacion: \n");
