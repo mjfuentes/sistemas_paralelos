@@ -84,7 +84,6 @@ int main(int argc,char*argv[]){
 	}   
 
 	// imprimeMatriz(C,N,1);
-	printf("Tiempo en segundos de multiplicacion de matrices: %f\n\n", dwalltime() - timetick);  
 
 	// ********************************************
 	// *************** ETAPA 2 ********************
@@ -99,7 +98,6 @@ int main(int argc,char*argv[]){
 	totA = 0;
 	totB = 0;
 
-	timetick = dwalltime();
 
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
@@ -132,7 +130,6 @@ int main(int argc,char*argv[]){
 		}
 	}
 
-	printf("Tiempo en segundos de multiplicacion por factor: %f\n\n", dwalltime() - timetick);  
 
 	// printf("Antes de la ordenacion: \n");
  //  	imprimeMatriz(C,N,1);
@@ -151,7 +148,6 @@ int main(int argc,char*argv[]){
 	// Utilizando vectores para disminuir fallo en cache //
 	///////////////////////////////////////////////////////
 
-	timetick = dwalltime();
 
 	// Itera por cada una de las columnas
 	for(i=0;i<N;i++){
@@ -198,7 +194,7 @@ int main(int argc,char*argv[]){
 		} 
 	}
 
-	printf("Tiempo en segundos de ordenacion: %f\n\n", dwalltime() - timetick);  
+	printf("Tiempo total: %f\n\n", dwalltime() - timetick);  
 	// printf("Despues de la ordenacion: \n");
  //  	imprimeMatriz(C,N,1);
 

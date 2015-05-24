@@ -7,6 +7,7 @@
 
 double *A,*B,*C,*AB,*D;
 int N,T;
+int P = 0;
 double res[24];
 double pow (double base , double exponent);
 float powf (float base  , float exponent);
@@ -40,13 +41,11 @@ void merge(double *col, int *pos,double *col_res, int *pos_res, int inicio, int 
 	{
 		if (col[i] > col[j])
 		{
-			printf(" %f > %f: \n",col[i],col[j]);
 			col_res[k] = col[i];
 			pos_res[k] = pos[i];
 			i ++;
 		}else
 		{
-			printf(" %f <= %f: \n",col[i],col[j]);
 			col_res[k] = col[j];
 			pos_res[k] = pos[j];
 			j ++;
@@ -55,7 +54,6 @@ void merge(double *col, int *pos,double *col_res, int *pos_res, int inicio, int 
 	}
 	if (j > final){
 		while (i<=mid){
-			printf(" %f \n",col[i]);
 			col_res[k] = col[i];
 			pos_res[k] = pos[i];
 			i ++;
@@ -63,7 +61,6 @@ void merge(double *col, int *pos,double *col_res, int *pos_res, int inicio, int 
 		}
 	} else if (i > mid){
 		while (j<=final){
-			printf(" %f \n",col[j]);
 			col_res[k] = col[j];
 			pos_res[k] = pos[j];
 			j ++;
@@ -81,32 +78,36 @@ void mergeSort(double *col, int *pos,double *col_res, int *pos_res, int inicio, 
 	merge(col,pos,col_res,pos_res, inicio, mid, final);
 }
 
-void imprimeMatriz(double *S,int N, int order){
-	int i,j,I,J,despB;
-
-	printf("Contenido de la matriz: \n" );
-	for (i=0; i<N; i++){
-		for(j=0;j<N;j++){
-			if (order == 1){
-				printf("%f ",S[i*N+j]);
+void imprimeMatriz(double *S,int N, int order,char comment[]){
+	if (P){
+		int i,j,I,J,despB;
+		printf("%s",comment);
+		printf("Contenido de la matriz: \n" );
+		for (i=0; i<N; i++){
+			for(j=0;j<N;j++){
+				if (order == 1){
+					printf("%f ",S[i*N+j]);
+				}
+				else {
+					printf("%f ",S[j*N+i]);
+				}
 			}
-			else {
-				printf("%f ",S[j*N+i]);
-			}
-		}
-		printf("\n ");
-	};
-	printf(" \n\n");
+			printf("\n ");
+		};
+		printf(" \n\n");
+	}
 }
 
-void imprimeVector(double *S,int N){
-	int i,j,I,J,despB;
-
-	printf("Contenido del vector: \n" );
-	for(j=0;j<N;j++){
-		printf("%f ",S[j]);
+void imprimeVector(double *S,int N,char comment[]){
+	if (P){
+		int i,j,I,J,despB;
+		printf("%s",comment);
+		printf("Contenido del vector: \n" );
+		for(j=0;j<N;j++){
+			printf("%f ",S[j]);
+		}
+		printf("\n\n");
 	}
-	printf("\n\n");
 }
 
 
@@ -154,7 +155,7 @@ void *calcular(void *s){
 	// ********************************************
 
 	if (id == 0){
-		imprimeMatriz(C,N,1);
+		imprimeMatriz(C,N,1,"Matriz resultante de A*B*D\n");
 		for(i=0;i<T;i++){
 			if (res[i*6] > maxA){
 				maxA = res[i*6];
@@ -176,8 +177,10 @@ void *calcular(void *s){
 		avgB = (double) totB / (N * N);
 		double a = maxA - minA;
 		double b = maxB - minB;
-		factor = ((a*a)/avgA) * ((b*b)/avgB) /100;
-		printf("Factor: %f\n\n", factor);  
+		factor = ((a*a)/avgA) * ((b*b)/avgB);
+		if (P){
+			printf("Factor: %f\n\n", factor);  
+		}
 	}
 
 	pthread_barrier_wait (&barrier);
@@ -190,11 +193,15 @@ void *calcular(void *s){
 	
 	pthread_barrier_wait (&barrier);
 
+	if (id == 0){
+		imprimeMatriz(C,N,1,"Matriz con factor aplicado\n");
+	}
+
 	// ********************************************
 	// *************** ETAPA 3 ********************
 	// ********************************************
 
-	for(i=0;i<2;i++){
+	for(i=0;i<N;i++){
 		for (l=principio;l<final;l++){
 			col[l]=C[i+l*N];
 			pos[l]=l;
@@ -207,44 +214,32 @@ void *calcular(void *s){
 		if (id % 2 == 0){
   
 			int mid = principio + (N/T) - 1;
-			printf("principio:%i\n\n", principio);  
-			printf("mid: %i\n\n", mid);  
-			printf("final: %i\n\n", principio + 2*(N/T)-1);
 			merge(col_res,pos_res,col,pos,principio,mid, principio + 2*(N/T)-1);
 		}
 
 		pthread_barrier_wait (&barrier);
 
 		if (id == 0){
-			imprimeMatriz(C,N,1);
 			int mid = (N/2) - 1;
-			printf("principio:%i\n\n", 0);  
-			printf("mid: %i\n\n", mid);  
-			printf("final: %i\n\n", N-1);
 			merge(col,pos,col_res,pos_res,0,mid, N-1);
-			for(j=0;j<N;j++){
-				printf("    %f  %i\n", col_res[j], pos_res[j]);
-			}
 		}
 
 		pthread_barrier_wait (&barrier);
 
 		double *backup=(double*)malloc(sizeof(double)*N*N);
 
-		for (j=i;j<N;j++){
-			for (k=principio;k<final;k++){
-				backup[j*N+k] = C[pos_res[j]*N+k];
-				if (id == 0){
-					printf("cambiar %f por %i\n",col_res[j], pos_res[j]); 
-				}
+
+		for (k=principio;k<final;k++){
+			for (j=i;j<N;j++){
+				backup[k*N+j] = C[pos_res[k]*N+j];
 			}
 		}
 
 		pthread_barrier_wait (&barrier);
 
-		for (j=0;j<N;j++){
-			for (k=principio;k<final;k++){
-				C[j*N+k] = backup[j*N+k];
+		for (k=principio;k<final;k++){
+			for (j=i;j<N;j++){
+				C[k*N+j] = backup[k*N+j];
 			}
 		}
 
@@ -267,12 +262,16 @@ int main(int argc,char*argv[]){
 	pthread_attr_t attr;
 	pthread_attr_init (&attr);
 
-	if (argc < 2){
-		printf("\n Falta un argumento:: N dimension de la matriz \n");
+	if (argc < 3){
+		printf("\n Faltan argumentos: Dimension de matriz e Impresion\n");
 		return 0;
 	}
 
 	N=atoi(argv[1]);
+	if (atoi(argv[2]) == 1){
+		P = 1;
+	} 
+	P=atoi(argv[2]);
 
    //Aloca memoria para las matrices
 	A=(double*)malloc(sizeof(double)*N*N);
@@ -304,9 +303,10 @@ int main(int argc,char*argv[]){
 		res[(i*6)+5] = 0;
 	}
 
-	imprimeMatriz(A,N,1);
-	imprimeMatriz(B,N,0);
-	imprimeVector(D,N);
+
+	imprimeMatriz(A,N,1,"Matriz A\n");
+	imprimeMatriz(B,N,0,"Matriz B\n");
+	imprimeVector(D,N,"Vector D\n");
 
 	pthread_barrier_init (&barrier, NULL, 4);
 
@@ -322,7 +322,7 @@ int main(int argc,char*argv[]){
 		pthread_join(p_threads[i], NULL);
 	}
 
-	imprimeMatriz(C,N,1);
+	imprimeMatriz(C,N,1,"Matriz ordenada\n");
 
 	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
 
