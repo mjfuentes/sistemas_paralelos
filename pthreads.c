@@ -24,6 +24,7 @@ double *col;
 int *pos;
 double *col_res;
 int *pos_res;
+double timetick;
 
 //Para calcular tiempo
 double dwalltime(){
@@ -119,6 +120,7 @@ void *calcular(void *s){
 	principio=id*(N/T);
 	final=principio+(N/T);
 	double temp;int pos_temp;
+	double *backup=(double*)malloc(sizeof(double)*N*N);
 
 	// ********************************************
 	// *************** ETAPA 1 ********************
@@ -194,6 +196,8 @@ void *calcular(void *s){
 	pthread_barrier_wait (&barrier);
 
 	if (id == 0){
+		printf("Etapa 1 y 2 terminada en: %f\n",dwalltime() - timetick);
+		timetick = dwalltime();  
 		imprimeMatriz(C,N,1,"Matriz con factor aplicado\n");
 	}
 
@@ -226,9 +230,6 @@ void *calcular(void *s){
 
 		pthread_barrier_wait (&barrier);
 
-		double *backup=(double*)malloc(sizeof(double)*N*N);
-
-
 		for (k=principio;k<final;k++){
 			for (j=i;j<N;j++){
 				backup[k*N+j] = C[pos_res[k]*N+j];
@@ -247,17 +248,14 @@ void *calcular(void *s){
 
 	}
 
-	
-	pthread_barrier_wait (&barrier);
-
 }
 
 int main(int argc,char*argv[]){
 	int id[T];
 	int i,j,k;
 	int check=1;
-	double timetick;
 	T = 4;
+	double timetick_total;
 	pthread_t p_threads[T];
 	pthread_attr_t attr;
 	pthread_attr_init (&attr);
@@ -310,6 +308,7 @@ int main(int argc,char*argv[]){
 
 	pthread_barrier_init (&barrier, NULL, 4);
 
+	timetick_total = dwalltime();  
 	timetick = dwalltime();  
 
 	for(i=0;i<T;i++){ 
@@ -322,65 +321,19 @@ int main(int argc,char*argv[]){
 		pthread_join(p_threads[i], NULL);
 	}
 
+	printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
 	imprimeMatriz(C,N,1,"Matriz ordenada\n");
 
-	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
+	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
 
-	// ********************************************
-	// *************** ETAPA 3 ********************
-	// ********************************************
+	free(A);
+	free(B);
+	free(C);
+	free(D);
+	free(pos);
+	free(col);
+	free(pos_res);
+	free(col_res);
 
-	int l;
-	timetick = dwalltime();
-
-	// Itera por cada una de las columnas
-	// for(i=0;i<N;i++){
-
-	// 	// Transforma la columna en un vector
-	// 	for (l=0;l<N;l++){
-	// 		col[l]=C[i+l*N];
-	// 		pos[l]=l;
-	// 	}
-
-	// 	// Utiliza bubble sort para ordenar el vector
-	// 	// Guarda en Col[] los valores del vector ordenados, y en pos[] los indices iniciales del vector ordenados
-	// 	for (l=0;l<N;l++){
-	// 		for(j=0;j<N-l;j++){
-	// 			if (col[j] < col[j+1]){
-	// 				temp = col[j];
-	// 				col[j] = col[j+1];
-	// 				col[j+1] = temp;
-	// 				pos_temp = pos[j];
-	// 				pos[j] = pos[j+1];
-	// 				pos[j+1] = pos_temp;
-	// 			}
-	// 		}
-	// 	}
-
-	// 	//Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
-	// 	for (k=0;k<N;k++){
-	// 		if (k != pos[k]){
-	// 			for (l=i;l<N;l++){
-	// 				temp = C[l+k*N];
-	// 				C[l+k*N] = C[l+(pos[k]*N)];
-	// 				C[l+(pos[k]*N)] = temp;
-	// 				for (j=k;j<N;j++){
-	// 					if (pos[j]==k){
-	// 						pos[j]=pos[k];
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-
-// free(A);
-// free(B);
-// free(C);
-// free(D);
-// free(pos);
-// free(col);
-
-return(0);
+	return(0);
 }
