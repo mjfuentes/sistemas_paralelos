@@ -5,7 +5,7 @@
 #include <limits.h>
 #include <pthread.h>
 
-double *A,*B,*C,*AB,*D;
+double *A,*B,*C,*AB,*D,*CO;
 int N,T;
 int P = 0;
 double res[24];
@@ -21,7 +21,7 @@ double totB = 0;
 double avgA,avgB,totA,totB,factor;
 pthread_barrier_t barrier;
 double *col;
-int *pos;
+int *pos; 
 double *col_res;
 int *pos_res;
 double timetick;
@@ -67,6 +67,10 @@ void merge(double *col, int *pos,double *col_res, int *pos_res, int inicio, int 
 			j ++;
 			k ++;
 		}
+	}
+	for (i=inicio;i<=final;i++){
+		col[i]=col_res[i];
+		pos[i]=pos_res[i];
 	}
 }
 
@@ -218,7 +222,7 @@ void *calcular(void *s){
 		if (id % 2 == 0){
   
 			int mid = principio + (N/T) - 1;
-			merge(col_res,pos_res,col,pos,principio,mid, principio + 2*(N/T)-1);
+			merge(col,pos,col_res,pos_res,principio,mid, principio + 2*(N/T)-1);
 		}
 
 		pthread_barrier_wait (&barrier);
@@ -232,15 +236,7 @@ void *calcular(void *s){
 
 		for (k=principio;k<final;k++){
 			for (j=i;j<N;j++){
-				backup[k*N+j] = C[pos_res[k]*N+j];
-			}
-		}
-
-		pthread_barrier_wait (&barrier);
-
-		for (k=principio;k<final;k++){
-			for (j=i;j<N;j++){
-				C[k*N+j] = backup[k*N+j];
+				CO[k*N+j] = C[pos[k]*N+j];
 			}
 		}
 
@@ -275,6 +271,7 @@ int main(int argc,char*argv[]){
 	A=(double*)malloc(sizeof(double)*N*N);
 	B=(double*)malloc(sizeof(double)*N*N);
 	C=(double*)malloc(sizeof(double)*N*N);
+	CO=(double*)malloc(sizeof(double)*N*N);
 	D=(double*)malloc(sizeof(double)*N);
 	col=(double*)malloc(sizeof(double)*N);
 	pos=(int*)malloc(sizeof(int)*N);

@@ -39,6 +39,7 @@ int main(int argc,char*argv[]){
 	double *A,*B,*C,*AB,*D;
 	int i,j,k,N;
 	int check=1;
+	double timetick_total;
 	double timetick;
 
 	if (argc < 2){
@@ -70,7 +71,7 @@ int main(int argc,char*argv[]){
 	// ********************************************
 	// *************** ETAPA 1 ********************
 	// ********************************************
-
+	timetick_total = dwalltime();
 	timetick = dwalltime();
 
 	for(i=0;i<N;i++){
@@ -130,7 +131,8 @@ int main(int argc,char*argv[]){
 		}
 	}
 
-
+		printf("Etapa 1 y 2 terminada en: %f\n",dwalltime() - timetick);
+		timetick = dwalltime();  
 	// printf("Antes de la ordenacion: \n");
  //  	imprimeMatriz(C,N,1);
 
@@ -194,7 +196,8 @@ int main(int argc,char*argv[]){
 		} 
 	}
 
-	printf("Tiempo total: %f\n\n", dwalltime() - timetick);  
+		printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
+		printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
 	// printf("Despues de la ordenacion: \n");
  //  	imprimeMatriz(C,N,1);
 
