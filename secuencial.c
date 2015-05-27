@@ -35,8 +35,66 @@ void imprimeMatriz(double *S,int N, int order){
 	printf(" \n\n");
 }
 
+void imprimeVector(double *S,int N,char comment[]){
+		int i,j,I,J,despB;
+		printf("%s",comment);
+		printf("Contenido del vector: \n" );
+		for(j=0;j<N;j++){
+			printf("%f ",S[j]);
+		}
+		printf("\n\n");
+}
+
+void merge(double *col, int *pos,double *col_res, int *pos_res, int inicio, int mid, int final)
+{
+	int i = inicio, j = mid + 1, k = inicio;
+	while (i <= mid && j <= final)
+	{
+		if (col[i] > col[j])
+		{
+			col_res[k] = col[i];
+			pos_res[k] = pos[i];
+			i ++;
+		}else
+		{
+			col_res[k] = col[j];
+			pos_res[k] = pos[j];
+			j ++;
+		}
+		k ++;
+	}
+	if (j > final){
+		while (i<=mid){
+			col_res[k] = col[i];
+			pos_res[k] = pos[i];
+			i ++;
+			k ++;
+		}
+	} else if (i > mid){
+		while (j<=final){
+			col_res[k] = col[j];
+			pos_res[k] = pos[j];
+			j ++;
+			k ++;
+		}
+	}
+	for (i=inicio;i<=final;i++){
+		col[i]=col_res[i];
+		pos[i]=pos_res[i];
+	}
+}
+
+void mergeSort(double *col, int *pos,double *col_res, int *pos_res, int inicio, int final)
+{
+	if (inicio == final) return;
+	int mid = (inicio + final)/2;
+	mergeSort(col,pos,col_res,pos_res, inicio, mid);
+	mergeSort(col,pos,col_res,pos_res,mid+1, final);
+	merge(col,pos,col_res,pos_res, inicio, mid, final);
+}
+
 int main(int argc,char*argv[]){
-	double *A,*B,*C,*AB,*D;
+	double *A,*B,*C,*AB,*D, *CO;
 	int i,j,k,N;
 	int check=1;
 	double timetick_total;
@@ -54,19 +112,21 @@ int main(int argc,char*argv[]){
 	B=(double*)malloc(sizeof(double)*N*N);
 	C=(double*)malloc(sizeof(double)*N*N);
 	D=(double*)malloc(sizeof(double)*N);
+	CO=(double*)malloc(sizeof(double)*N*N);
 
    //Inicializa las matrices A y B en 1, C en diagonal
+	srand(time(0));
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
-			A[i*N+j] = rand()%10;
-			B[j*N+i] = rand()%10;
+			A[i*N+j] = rand()%10+1;
+			B[j*N+i] = rand()%10+1;
 		}
-		D[i] = rand()%10;
+		D[i] = rand()%10+1;
 	}
 
-	// imprimeMatriz(A,N,1);
-	// imprimeMatriz(B,N,0);
-	// imprimeMatriz(D,N,1);
+	 // imprimeMatriz(A,N,1);
+	 // imprimeMatriz(B,N,0);
+	 // imprimeMatriz(D,N,1);
 
 	// ********************************************
 	// *************** ETAPA 1 ********************
@@ -134,15 +194,19 @@ int main(int argc,char*argv[]){
 		printf("Etapa 1 y 2 terminada en: %f\n",dwalltime() - timetick);
 		timetick = dwalltime();  
 	// printf("Antes de la ordenacion: \n");
- //  	imprimeMatriz(C,N,1);
+ 	  //	imprimeMatriz(C,N,1);
 
 	// ********************************************
 	// *************** ETAPA 3 ********************
 	// ********************************************
 
-	int l;double *col;int *pos;
+	int l;
+	double *col, *col_res;
+	int *pos, *pos_res;
 	col=(double*)malloc(sizeof(double)*N);
 	pos=(int*)malloc(sizeof(int)*N);
+	col_res=(double*)malloc(sizeof(double)*N);
+	pos_res=(int*)malloc(sizeof(int)*N);
 	double temp;int pos_temp;
 
 
@@ -160,20 +224,9 @@ int main(int argc,char*argv[]){
 			pos[l]=l;
 		}
 
-		// Utiliza bubble sort para ordenar el vector
-		// Guarda en Col[] los valores del vector ordenados, y en pos[] los indices iniciales del vector ordenados
-		for (l=0;l<N;l++){
-			for(j=0;j<N-l;j++){
-				if (col[j] < col[j+1]){
-					temp = col[j];
-					col[j] = col[j+1];
-					col[j+1] = temp;
-					pos_temp = pos[j];
-					pos[j] = pos[j+1];
-					pos[j+1] = pos_temp;
-				}
-			}
-		}
+		// Merge sort al vector
+		mergeSort(col,pos,col_res,pos_res,0,N-1);
+
 
 		////////////////////////////////////////////////////////
 		// Ordena la matriz a partir del vector de posiciones //
@@ -181,30 +234,22 @@ int main(int argc,char*argv[]){
 
 		//Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
 		for (k=0;k<N;k++){
-			if (k != pos[k]){
-				for (l=i;l<N;l++){
-					temp = C[l+k*N];
-					C[l+k*N] = C[l+(pos[k]*N)];
-					C[l+(pos[k]*N)] = temp;
-					for (j=k;j<N;j++){
-						if (pos[j]==k){
-							pos[j]=pos[k];
-						}
-					}
-				}
+			for (l=i;l<N;l++){
+				CO[l+k*N] = C[l+(pos[k]*N)];
 			}
 		} 
 	}
 
 		printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
 		printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
-	// printf("Despues de la ordenacion: \n");
- //  	imprimeMatriz(C,N,1);
+		//printf("Despues de la ordenacion: \n");
+ 		//imprimeMatriz(CO,N,1);
 
 
 free(A);
 free(B);
 free(C);
 free(D);
+free(CO);
 return(0);
 }
