@@ -94,8 +94,7 @@ void mergeSort(double *col, int *pos,double *col_res, int *pos_res, int inicio, 
 	merge(col,pos,col_res,pos_res, inicio, mid, final);
 }
 
-int main(int argc,char*argv[]){
-	double *A,*B,*C,*AB,*D, *CO;
+int main(int argc,char*argv[]){	double *A,*B,*C,*AB,*D, *CO;
 	int i,j,k,N;
 	int check=1;
 	double timetick_total;
@@ -120,7 +119,7 @@ int main(int argc,char*argv[]){
 
     // Variables para etapa 2	
 	int tid;
-	double localMaxA,localMaxB,localMinA,localMinB,totA,totB,factor, avgA, avgB,maxA,minA,maxB,minB;
+	double totA,totB,factor, avgA, avgB,maxA,minA,maxB,minB;
 	maxA = INT_MIN;
 	maxB = INT_MIN;
 	minB = INT_MAX;
@@ -128,6 +127,16 @@ int main(int argc,char*argv[]){
 	totA = 0;
 	totB = 0;
 	
+	
+  // Varibles para la etapa 3
+	int l;
+	double *col, *col_res;
+	int *pos, *pos_res;
+	col=(double*)malloc(sizeof(double)*N);
+	pos=(int*)malloc(sizeof(int)*N);
+	col_res=(double*)malloc(sizeof(double)*N);
+	pos_res=(int*)malloc(sizeof(int)*N);
+	double temp;int pos_temp;
 	
    //Inicializa las matrices A y B en 1, D en diagonal
 	srand(time(0));
@@ -154,32 +163,33 @@ int main(int argc,char*argv[]){
 
 	 // YA NO VA EL PARALLEL PORQ LOS HILOS YA SE CREARON, y  paralelizo el for. PREGUNTAR ESTO O SECTION SIN PARALLEL? EN LA TEORIA DICE FOR/SECTIONS
 	// i por defecto va al private porq es el indice del for
-        #pragma omp parallel default(none) private(tid,i,j,k) shared(factor,A,B,C,D,N,totA,totB,avgA,avgB,maxA,maxB,minA,minB)	
+        #pragma omp parallel default(none) private(tid,i,j,k,l) shared(CO,factor,A,B,C,D,N,totA,totB,avgA,avgB,maxA,maxB,minA,minB,timetick,col,pos,col_res,pos_res,etapa1,etapa2)	
 	{ // abro directiva de region 
-	#pragma omp for private(j,k)
-	for(i=0;i<N;i++){
-		for(j=0;j<N;j++){
-			C[i*N+j] = 0;
-			for(k=0;k<N;k++){
-				C[i*N+j] += A[i*N+k] * B[j*N+k];
-			}
-			C[i*N+j] = C[i*N+j] * D[j]; 
-		}
-	}   
+	    #pragma omp for private(j,k)
+	    for(i=0;i<N;i++){
+		    for(j=0;j<N;j++){
+			    C[i*N+j] = 0;
+			    for(k=0;k<N;k++){
+				    C[i*N+j] += A[i*N+k] * B[j*N+k];
+			    }
+			    C[i*N+j] = C[i*N+j] * D[j]; 
+		    }
+	    }   
 	
-tid = omp_get_thread_num();
+	    tid = omp_get_thread_num();
+
 
 #pragma omp single
 
    { 
 
-		printf("Matriz A: %f\n");
+		printf("Matriz A:\n");
 		imprimeMatriz(A,N,1);
 		
-		printf("Matriz B: %f\n");
+		printf("Matriz B: \n");
 		imprimeMatriz(B,N,1);
 
-		printf("Matriz C: %f\n");
+		printf("Matriz C: \n");
 		imprimeMatriz(C,N,1);
       
     }
@@ -191,8 +201,9 @@ tid = omp_get_thread_num();
 	// ********************************************
 
 	
-
-	#pragma omp for private(j,localMaxA,localMaxB,localMinA,localMinB) reduction(+: totA,totB)
+	double localMaxA,localMaxB,localMinA,localMinB;
+	
+	#pragma omp for private(j) reduction(+: totA,totB)
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
 			
@@ -211,7 +222,11 @@ tid = omp_get_thread_num();
 			totA += A[i*N+j];
 			totB += B[j*N+i];
 		}
-		#pragma omp critical
+		
+		
+	}
+	
+			#pragma omp critical
 			if (localMaxA > maxA){
 				maxA = localMaxA;
 			}
@@ -226,101 +241,132 @@ tid = omp_get_thread_num();
 		#pragma omp critical
 			if (localMinB < minB){
 				minB = localMinB;
-			}		
-		
-	}
+			}
 	
 	//SIGUE EL MASTER
 	tid = omp_get_thread_num();
 
-#pragma omp single
-   { 
-      
-    
-	avgA = (double) totA / (N * N);
-	avgB = (double) totB / (N * N);
-	double a = maxA - minA;
-	double b = maxB - minB;
-	factor = ((a*a)/avgA) * ((b*b)/avgB);
-    
-printf("Factor: %f\n",factor);	
-printf("Max A: %f\n",maxA);	
-printf("Max B: %f\n",maxB);	
-printf("Total A: %f\n",totA);
-printf("Total B: %f\n",totB);
+	#pragma omp single
+	  { 
+	      
+	    
+		avgA = (double) totA / (N * N);
+		avgB = (double) totB / (N * N);
+		double a = maxA - minA;
+		double b = maxB - minB;
+		factor = ((a*a)/avgA) * ((b*b)/avgB);
+	   
+	printf("Factor: %f\n",factor);	
+	printf("Max A: %f\n",maxA);	
+	printf("Max B: %f\n",maxB);	
+	printf("Total A: %f\n",totA);
+	printf("Total B: %f\n",totB);
 
-}
+	}
+	
 	#pragma omp for private(j) firstprivate (factor)
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
-			printf("Factor: %f\n",factor);
-			C[i*N+j] = C[i*N+j] * factor;
+			//C[i*N+j] = C[i*N+j] * factor;
 		}
 	}
 	
 	#pragma omp single
 	{
-		printf("Matriz C: %f\n");
+		printf("Matriz C * factor: \n");
 		imprimeMatriz(C,N,1);
 	}
 
 
-	}// CIERRO EL DEL OMP PARALLEL
+	
+#pragma omp single
+	{
+		etapa2 = dwalltime() - timetick;
+		timetick = dwalltime(); 
 
-		printf("Etapa 1 y 2 terminada en: %f\n",dwalltime() - timetick);
-		timetick = dwalltime();  
-	 // printf("Antes de la ordenacion: \n");
- 	 	//imprimeMatriz(C,N,1);
+
+	}
+	  
 
 	// ********************************************
 	// *************** ETAPA 3 ********************
 	// ********************************************
-
-	int l;
-	double *col, *col_res;
-	int *pos, *pos_res;
-	col=(double*)malloc(sizeof(double)*N);
-	pos=(int*)malloc(sizeof(int)*N);
-	col_res=(double*)malloc(sizeof(double)*N);
-	pos_res=(int*)malloc(sizeof(int)*N);
-	double temp;int pos_temp;
 
 
 	///////////////////////////////////////////////////////
 	// Utilizando vectores para disminuir fallo en cache //
 	///////////////////////////////////////////////////////
 
-
+	
 	// Itera por cada una de las columnas
 	for(i=0;i<N;i++){
-
-		// Transforma la columna en un vector
+	  
+	      // Transforma la columna en un vector
+		#pragma omp for
 		for (l=0;l<N;l++){
 			col[l]=C[i+l*N];
 			pos[l]=l;
 		}
 
 		// Merge sort al vector
-		mergeSort(col,pos,col_res,pos_res,0,N-1);
+		mergeSort(col,pos,col_res,pos_res,tid*(N/4),(tid+1)*(N/4)-1);
+	//	if (tid == 0) mergeSort(col,pos,col_res,pos_res,0,N-1);
 
+		#pragma omp barrier
+
+		if (tid % 2 == 0){
+  
+			int mid = tid*(N/4) + (N/4) - 1;
+			merge(col,pos,col_res,pos_res,tid*(N/4),mid, tid*(N/4) + 2*(N/4)-1);
+		}
+
+		#pragma omp barrier
+
+		if (tid == 0){
+			int mid = (N/2) - 1;
+			merge(col,pos,col_res,pos_res,0,mid, N-1);
+		}
+
+		#pragma omp barrier
 
 		////////////////////////////////////////////////////////
 		// Ordena la matriz a partir del vector de posiciones //
 		////////////////////////////////////////////////////////
-
-		//Utiliza el vector pos[] para ordenar las filas de la matriz hacia la derecha
+		
+		
+		#pragma omp for
 		for (k=0;k<N;k++){
-			for (l=i;l<N;l++){
-				CO[l+k*N] = C[l+(pos[k]*N)];
+			for (j=i;j<N;j++){
+				CO[k*N+j] = C[pos[k]*N+j];
 			}
-		} 
+		}
+		
+		#pragma omp single
+		{
+		  double * tmp = C;
+		  C = CO;
+		  CO = tmp;
+		}
+	
+	  }
 	}
-
+	// CIERRO EL DEL OMP PARALLEL
+		printf("Etapa 1 y 2 terminada en: %f\n", etapa2);
 		printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
 		printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
 		//printf("Despues de la ordenacion: \n");
- 		//imprimeMatriz(CO,N,1);
-
+		printf("Despues del acomodo: \n");
+ 		imprimeMatriz(CO,N,1);
+		printf("Despues del acomodo: \n");
+ 		imprimeMatriz(C,N,1);
+		
+		for (k=0;k<N;k++){
+			for (j=i;j<N;j++){
+				printf("CO: %f\n", CO[k*N+j] );
+				
+				printf("C: %f\n", C[pos[k]*N+j] );
+			}	
+		}
 
 free(A);
 free(B);
