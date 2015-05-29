@@ -199,12 +199,6 @@ void *calcular(void *s){
 	
 	pthread_barrier_wait (&barrier);
 
-	if (id == 0){
-		printf("Etapa 1 y 2 terminada en: %f\n",dwalltime() - timetick);
-		timetick = dwalltime();  
-		imprimeMatriz(C,N,1,"Matriz con factor aplicado\n");
-	}
-
 	// ********************************************
 	// *************** ETAPA 3 ********************
 	// ********************************************
@@ -220,7 +214,7 @@ void *calcular(void *s){
 		pthread_barrier_wait (&barrier);
 
 		if (id % 2 == 0){
-  
+
 			int mid = principio + (N/T) - 1;
 			merge(col,pos,col_res,pos_res,principio,mid, principio + 2*(N/T)-1);
 		}
@@ -232,6 +226,7 @@ void *calcular(void *s){
 			merge(col,pos,col_res,pos_res,0,mid, N-1);
 		}
 
+
 		pthread_barrier_wait (&barrier);
 
 		for (k=principio;k<final;k++){
@@ -242,8 +237,26 @@ void *calcular(void *s){
 
 		pthread_barrier_wait (&barrier);
 
+		if (id == 0){
+			double * temp = C;
+			C = CO;
+			CO = temp;
+		}
+
+		pthread_barrier_wait (&barrier);
+
 	}
 
+	for (k=principio;k<final;k++){
+		for (j=0;j<N/2;j++){
+			C[k*N+(j*2)] = CO[k*N+(j*2)];
+			C[k*N+(j*2)+1] = C[k*N+(j*2)+1];
+		}
+	}
+
+	pthread_barrier_wait (&barrier);
+
+	
 }
 
 int main(int argc,char*argv[]){
@@ -318,14 +331,14 @@ int main(int argc,char*argv[]){
 		pthread_join(p_threads[i], NULL);
 	}
 
-	printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
-	imprimeMatriz(C,N,1,"Matriz ordenada\n");
+ 	// imprimeMatriz(C,N,1,"");
 
 	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
 
 	free(A);
 	free(B);
 	free(C);
+	free(CO);
 	free(D);
 	free(pos);
 	free(col);

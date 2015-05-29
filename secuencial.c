@@ -97,7 +97,6 @@ int main(int argc,char*argv[]){
 	double *A,*B,*C,*AB,*D, *CO;
 	int i,j,k,N;
 	int check=1;
-	double timetick_total;
 	double timetick;
 
 	if (argc < 2){
@@ -114,7 +113,7 @@ int main(int argc,char*argv[]){
 	D=(double*)malloc(sizeof(double)*N);
 	CO=(double*)malloc(sizeof(double)*N*N);
 
-   //Inicializa las matrices A y B en 1, C en diagonal
+   //Inicializa las matrices A y B en 1, D en diagonal
 	srand(time(0));
 	for(i=0;i<N;i++){
 		for(j=0;j<N;j++){
@@ -124,14 +123,10 @@ int main(int argc,char*argv[]){
 		D[i] = rand()%10+1;
 	}
 
-	 // imprimeMatriz(A,N,1);
-	 // imprimeMatriz(B,N,0);
-	 // imprimeMatriz(D,N,1);
 
 	// ********************************************
 	// *************** ETAPA 1 ********************
 	// ********************************************
-	timetick_total = dwalltime();
 	timetick = dwalltime();
 
 	for(i=0;i<N;i++){
@@ -144,7 +139,6 @@ int main(int argc,char*argv[]){
 		}
 	}   
 
-	// imprimeMatriz(C,N,1);
 
 	// ********************************************
 	// *************** ETAPA 2 ********************
@@ -191,11 +185,6 @@ int main(int argc,char*argv[]){
 		}
 	}
 
-		printf("Etapa 1 y 2 terminada en: %f\n",dwalltime() - timetick);
-		timetick = dwalltime();  
-	// printf("Antes de la ordenacion: \n");
- 	  //	imprimeMatriz(C,N,1);
-
 	// ********************************************
 	// *************** ETAPA 3 ********************
 	// ********************************************
@@ -240,11 +229,7 @@ int main(int argc,char*argv[]){
 		} 
 	}
 
-		printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
-		printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
-		//printf("Despues de la ordenacion: \n");
- 		//imprimeMatriz(CO,N,1);
-
+	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
 
 free(A);
 free(B);

@@ -37,13 +37,13 @@ void imprimeMatriz(double *S,int N, int order){
 }
 
 void imprimeVector(double *S,int N,char comment[]){
-		int i,j,I,J,despB;
-		printf("%s",comment);
-		printf("Contenido del vector: \n" );
-		for(j=0;j<N;j++){
-			printf("%f ",S[j]);
-		}
-		printf("\n\n");
+	int i,j,I,J,despB;
+	printf("%s",comment);
+	printf("Contenido del vector: \n" );
+	for(j=0;j<N;j++){
+		printf("%f ",S[j]);
+	}
+	printf("\n\n");
 }
 
 void merge(double *col, int *pos,double *col_res, int *pos_res, int inicio, int mid, int final)
@@ -99,8 +99,8 @@ int main(int argc,char*argv[]){	double *A,*B,*C,*AB,*D, *CO;
 	int check=1;
 	double timetick_total;
 	double timetick;
-	omp_set_num_threads(4); // DEFINO LA CANTIDAD DE HILOS PARA EL OPENMP
-	double etapa1,etapa2,etapa3; // VARIABLES PARA SACAR LOS TIEMPOS EN VEZ DE HACER PRINT F
+	omp_set_num_threads(4);
+	double etapa1,etapa2; 
 
 	
 	if (argc < 2){
@@ -148,145 +148,136 @@ int main(int argc,char*argv[]){	double *A,*B,*C,*AB,*D, *CO;
 		D[i] = rand()%10+1;
 	}
 
-	 // imprimeMatriz(A,N,1);
-	 // imprimeMatriz(B,N,0);
-	 // imprimeMatriz(D,N,1);
-
 	// ********************************************
 	// *************** ETAPA 1 ********************
 	// ********************************************
 	timetick_total = dwalltime();
 	timetick = dwalltime();
 
-	// DIRECTIVA PARA CREAR LOS HILOS, CON LOS ARREGLOS COMPARTIDOS POR TODOS LOS HILOS	
-	
-
-	 // YA NO VA EL PARALLEL PORQ LOS HILOS YA SE CREARON, y  paralelizo el for. PREGUNTAR ESTO O SECTION SIN PARALLEL? EN LA TEORIA DICE FOR/SECTIONS
 	// i por defecto va al private porq es el indice del for
         #pragma omp parallel default(none) private(tid,i,j,k,l) shared(CO,factor,A,B,C,D,N,totA,totB,avgA,avgB,maxA,maxB,minA,minB,timetick,col,pos,col_res,pos_res,etapa1,etapa2)	
 	{ // abro directiva de region 
 	    #pragma omp for private(j,k)
-	    for(i=0;i<N;i++){
-		    for(j=0;j<N;j++){
-			    C[i*N+j] = 0;
-			    for(k=0;k<N;k++){
-				    C[i*N+j] += A[i*N+k] * B[j*N+k];
-			    }
-			    C[i*N+j] = C[i*N+j] * D[j]; 
-		    }
-	    }   
-	
-	    tid = omp_get_thread_num();
+		for(i=0;i<N;i++){
+			for(j=0;j<N;j++){
+				C[i*N+j] = 0;
+				for(k=0;k<N;k++){
+					C[i*N+j] += A[i*N+k] * B[j*N+k];
+				}
+				C[i*N+j] = C[i*N+j] * D[j]; 
+			}
+		}   
+
+		tid = omp_get_thread_num();
 
 
 #pragma omp single
 
-   { 
+		{ 
 
-		printf("Matriz A:\n");
-		imprimeMatriz(A,N,1);
-		
-		printf("Matriz B: \n");
-		imprimeMatriz(B,N,1);
+			printf("Matriz A:\n");
+			imprimeMatriz(A,N,1);
 
-		printf("Matriz C: \n");
-		imprimeMatriz(C,N,1);
-      
-    }
+			printf("Matriz B: \n");
+			imprimeMatriz(B,N,1);
 
-	
+			printf("Matriz C: \n");
+			imprimeMatriz(C,N,1);
+
+		}
+
+
 
 	// ********************************************
 	// *************** ETAPA 2 ********************
 	// ********************************************
 
-	
-	double localMaxA,localMaxB,localMinA,localMinB;
-	
+
+		double localMaxA,localMaxB,localMinA,localMinB;
+
 	#pragma omp for private(j) reduction(+: totA,totB)
-	for(i=0;i<N;i++){
-		for(j=0;j<N;j++){
-			
-			if (A[i*N+j] > localMaxA){
-				localMaxA = A[i*N+j];
-			} 
-			if (A[i*N+j] < localMinA){
-				localMinA = A[i*N+j];
+		for(i=0;i<N;i++){
+			for(j=0;j<N;j++){
+
+				if (A[i*N+j] > localMaxA){
+					localMaxA = A[i*N+j];
+				} 
+				if (A[i*N+j] < localMinA){
+					localMinA = A[i*N+j];
+				}
+				if (B[j*N+i] > localMaxB){
+					localMaxB = B[j*N+i];
+				} 
+				if (B[j*N+i] < localMinB){
+					localMinB = B[j*N+i];
+				}
+				totA += A[i*N+j];
+				totB += B[j*N+i];
 			}
-			if (B[j*N+i] > localMaxB){
-				localMaxB = B[j*N+i];
-			} 
-			if (B[j*N+i] < localMinB){
-				localMinB = B[j*N+i];
-			}
-			totA += A[i*N+j];
-			totB += B[j*N+i];
+
+
 		}
-		
-		
-	}
-	
+
 			#pragma omp critical
-			if (localMaxA > maxA){
-				maxA = localMaxA;
-			}
-		#pragma omp critical
-			if (localMinA < minA){
-				minA = localMinA;
-			}
-		#pragma omp critical
-			if (localMaxB > maxB){
-				maxB = localMaxB;
-			}
-		#pragma omp critical
-			if (localMinB < minB){
-				minB = localMinB;
-			}
-	
-	//SIGUE EL MASTER
-	tid = omp_get_thread_num();
-
-	#pragma omp single
-	  { 
-	      
-	    
-		avgA = (double) totA / (N * N);
-		avgB = (double) totB / (N * N);
-		double a = maxA - minA;
-		double b = maxB - minB;
-		factor = ((a*a)/avgA) * ((b*b)/avgB);
-	   
-	printf("Factor: %f\n",factor);	
-	printf("Max A: %f\n",maxA);	
-	printf("Max B: %f\n",maxB);	
-	printf("Total A: %f\n",totA);
-	printf("Total B: %f\n",totB);
-
-	}
-	
-	#pragma omp for private(j) firstprivate (factor)
-	for(i=0;i<N;i++){
-		for(j=0;j<N;j++){
-			//C[i*N+j] = C[i*N+j] * factor;
+		if (localMaxA > maxA){
+			maxA = localMaxA;
 		}
-	}
-	
+		#pragma omp critical
+		if (localMinA < minA){
+			minA = localMinA;
+		}
+		#pragma omp critical
+		if (localMaxB > maxB){
+			maxB = localMaxB;
+		}
+		#pragma omp critical
+		if (localMinB < minB){
+			minB = localMinB;
+		}
+
+		tid = omp_get_thread_num();
+
 	#pragma omp single
-	{
-		printf("Matriz C * factor: \n");
-		imprimeMatriz(C,N,1);
-	}
+		{ 
 
 
-	
+			avgA = (double) totA / (N * N);
+			avgB = (double) totB / (N * N);
+			double a = maxA - minA;
+			double b = maxB - minB;
+			factor = ((a*a)/avgA) * ((b*b)/avgB);
+
+			printf("Factor: %f\n",factor);	
+			printf("Max A: %f\n",maxA);	
+			printf("Max B: %f\n",maxB);	
+			printf("Total A: %f\n",totA);
+			printf("Total B: %f\n",totB);
+
+		}
+
+	#pragma omp for private(j) firstprivate (factor)
+		for(i=0;i<N;i++){
+			for(j=0;j<N;j++){
+				C[i*N+j] = C[i*N+j] * factor;
+			}
+		}
+
+	#pragma omp single
+		{
+			printf("Matriz C * factor: \n");
+			imprimeMatriz(C,N,1);
+		}
+
+
+
 #pragma omp single
-	{
-		etapa2 = dwalltime() - timetick;
-		timetick = dwalltime(); 
+		{
+			etapa2 = dwalltime() - timetick;
+			timetick = dwalltime(); 
 
 
-	}
-	  
+		}
+
 
 	// ********************************************
 	// *************** ETAPA 3 ********************
@@ -297,81 +288,84 @@ int main(int argc,char*argv[]){	double *A,*B,*C,*AB,*D, *CO;
 	// Utilizando vectores para disminuir fallo en cache //
 	///////////////////////////////////////////////////////
 
-	
+
 	// Itera por cada una de las columnas
-	for(i=0;i<N;i++){
-	  
+		for(i=0;i<N;i++){
+
 	      // Transforma la columna en un vector
 		#pragma omp for
-		for (l=0;l<N;l++){
-			col[l]=C[i+l*N];
-			pos[l]=l;
-		}
+			for (l=0;l<N;l++){
+				col[l]=C[i+l*N];
+				pos[l]=l;
+			}
 
 		// Merge sort al vector
-		mergeSort(col,pos,col_res,pos_res,tid*(N/4),(tid+1)*(N/4)-1);
+			mergeSort(col,pos,col_res,pos_res,tid*(N/4),(tid+1)*(N/4)-1);
 	//	if (tid == 0) mergeSort(col,pos,col_res,pos_res,0,N-1);
 
 		#pragma omp barrier
 
-		if (tid % 2 == 0){
-  
-			int mid = tid*(N/4) + (N/4) - 1;
-			merge(col,pos,col_res,pos_res,tid*(N/4),mid, tid*(N/4) + 2*(N/4)-1);
-		}
+			if (tid % 2 == 0){
+
+				int mid = tid*(N/4) + (N/4) - 1;
+				merge(col,pos,col_res,pos_res,tid*(N/4),mid, tid*(N/4) + 2*(N/4)-1);
+			}
 
 		#pragma omp barrier
 
-		if (tid == 0){
-			int mid = (N/2) - 1;
-			merge(col,pos,col_res,pos_res,0,mid, N-1);
-		}
+			if (tid == 0){
+				int mid = (N/2) - 1;
+				merge(col,pos,col_res,pos_res,0,mid, N-1);
+			}
 
 		#pragma omp barrier
 
 		////////////////////////////////////////////////////////
 		// Ordena la matriz a partir del vector de posiciones //
 		////////////////////////////////////////////////////////
-		
-		
+
+
 		#pragma omp for
-		for (k=0;k<N;k++){
-			for (j=i;j<N;j++){
-				CO[k*N+j] = C[pos[k]*N+j];
+			for (k=0;k<N;k++){
+				for (j=i;j<N;j++){
+					CO[k*N+j] = C[pos[k]*N+j];
+				}
 			}
-		}
-		
+
 		#pragma omp single
-		{
-		  double * tmp = C;
-		  C = CO;
-		  CO = tmp;
-		}
-	
-	  }
-	}
-	// CIERRO EL DEL OMP PARALLEL
-		printf("Etapa 1 y 2 terminada en: %f\n", etapa2);
-		printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
-		printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
-		//printf("Despues de la ordenacion: \n");
-		printf("Despues del acomodo: \n");
- 		imprimeMatriz(CO,N,1);
-		printf("Despues del acomodo: \n");
- 		imprimeMatriz(C,N,1);
-		
-		for (k=0;k<N;k++){
-			for (j=i;j<N;j++){
-				printf("CO: %f\n", CO[k*N+j] );
-				
-				printf("C: %f\n", C[pos[k]*N+j] );
-			}	
+			{
+				double * tmp = C;
+				C = CO;
+				CO = tmp;
+			}
+
 		}
 
-free(A);
-free(B);
-free(C);
-free(D);
-free(CO);
-return(0);
+		#pragma omp for
+		for (k=0;k<N;k++){
+			for (j=0;j<N/2;j++){
+				C[k*N+(j*2)] = CO[k*N+(j*2)];
+				C[k*N+(j*2)+1] = C[k*N+(j*2)+1];
+			}
+		}
+	}
+	// CIERRO EL DEL OMP PARALLEL
+	printf("Etapa 1 y 2 terminada en: %f\n", etapa2);
+	printf("Etapa 3 terminada en: %f\n",dwalltime() - timetick);
+	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick_total);  
+		//printf("Despues de la ordenacion: \n");
+		// printf("Despues del acomodo: \n");
+ 	// 	imprimeMatriz(CO,N,1);
+		// printf("Despues del acomodo: \n");
+ 	// 	imprimeMatriz(C,N,1);
+
+
+
+
+	free(A);
+	free(B);
+	free(C);
+	free(D);
+	free(CO);
+	return(0);
 }
