@@ -88,8 +88,10 @@ int main(int argc, char *argv[])
 
     lcl = (int*)malloc(sizeof(double)*(N/size)*2);
     int ok = 1;
+    int receiving = 1;
     int tag, step, out, stage,max_stage,done;
     max_stage = //logaritmo en base 2 del size
+    max_step = size;
     tmp = (int*)malloc(sizeof(double)*(N/size)*2);
     out=0; step=0; done=0;
 
@@ -125,7 +127,7 @@ int main(int argc, char *argv[])
             MPI_Recv(&(lcl[0]),N/size*2,MPI_INT,MPI_ANY_SOURCE,tag,MPI_COMM_WORLD,&status);
             if (tag == 0){
                 MPI_Request request;
-                if (stage <= max_stage){
+                if (receiving == 1){
                     if (stage == 0){
                         MPI_Isend(&(A[step*(N/size)]),N/size,MPI_INT,status.MPI_SOURCE,step,MPI_COMM_WORLD,&request);
                         step = step + 1;
@@ -135,10 +137,17 @@ int main(int argc, char *argv[])
                         MPI_Isend(&(A[step_2*(N/size*2)]),N/size*2,MPI_INT,status.MPI_SOURCE,tag,MPI_COMM_WORLD,&request);
                         step = step + 1;
                     }
-                    if (step * (size - stage) == N){
-                        step = 0;
-                        stage++;
+                    if (step == max_step){
+                        if (max_step > 1){
+                            step = 0;
+                            max_step = max_step / 2;
+                            stage++;
+                        }
+                        else {
+                            receiving = 0;
+                        }
                     }
+
                 }
                 else {
                     MPI_Isend(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,-1,MPI_COMM_WORLD);
@@ -149,12 +158,14 @@ int main(int argc, char *argv[])
                 }
             }
             else {
-                if (tag < size){
-                    int temp = tag * (N/size);
+                int stage = tag / size;
+                int pos = tag % size;
+                if (stage == 0){
+                    int temp = pos * (N/size);
                     save(A,temp,temp + (N/size),lcl);
                     done++;
                 }
-                else if (tag >= size && tag < (size + size/2)){
+                else {
                     int aux = tag - size;
                     int temp = aux * (N/size) * 2;
                     save(A,temp, temp + (N/size) * 2, lcl);
