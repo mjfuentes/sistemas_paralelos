@@ -69,8 +69,9 @@ int main(int argc, char *argv[])
 
     lcl = (int*)malloc(sizeof(double)*(N/size)*2);
     bool ok = true;
-    int tag, step, out;
+    int tag, step, out, stage,max_stage;
     out=0; step=0;
+    max_stage = //logaritmo en base 2 del size
     //Comienza el ordenado
     while(ok)
     {
@@ -79,13 +80,18 @@ int main(int argc, char *argv[])
             MPI_Irecv(&(lcl[0]),N/size*2,MPI_INT,0,tag,MPI_COMM_WORLD,&request); 
             MPI_Send(&(lcl[0]),0,MPI_INT,0,-1,MPI_COMM_WORLD);
             MPI_Status status; 
-            int MPI_Wait(&request, &status);
-            if (tag < size){
+            int MPI_Wait(&request, &status); 
+            int stage = tag / size;
+            int pos = tag % size;
+            if (stage == 0){
+                // stage cero es sort
                 sortArray(&lcl, 0, N/size);
                 MPI_Send(&(lcl[0]),N/size,MPI_INT,0,tag,MPI_COMM_WORLD);
             }
-            else if (tag >= size && tag < (size + size/2)){
-                merge(&lcl, 0, N/size - 1, N/size *2 - 1);
+            else if (stage > 0){
+                // stage mayor a cero es merge
+                int half = N / size * (stage - 1);
+                merge(&lcl, 0, half - 1, half*2 - 1);
                 MPI_Send(&(lcl[0]),N/size*2,MPI_INT,0,tag,MPI_COMM_WORLD);
             }
             else {
@@ -96,19 +102,23 @@ int main(int argc, char *argv[])
         {
             MPI_Status status;
             MPI_Recv(&(lcl[0]),N/size*2,MPI_INT,MPI_ANY_SOURCE,tag,MPI_COMM_WORLD,&status);
-            if (tag == -1){
-                if (step < size){
-                    MPI_Isend(&(A[step*(N/size)]),N/size,MPI_INT,status.MPI_SOURCE,step,MPI_COMM_WORLD);
-                    step = step + 1;
-                }
-                else if {
-                    if (step < (size + size/2)){
+            if (tag == 0){
+                if (stage <= max_stage){
+                    if (stage == 0){
+                        MPI_Isend(&(A[step*(N/size)]),N/size,MPI_INT,status.MPI_SOURCE,step,MPI_COMM_WORLD);
+                        step = step + (N/size);
+                    }
+                    else {
                         MPI_Isend(&(A[step_2*(N/size*2)]),N/size*2,MPI_INT,status.MPI_SOURCE,step,MPI_COMM_WORLD);
-                        step_2 = step_2 + 1;
+                        step = step + 1;
+                    }
+                    if (step == N){
+                        step = 0;
+                        stage++;
                     }
                 }
                 else {
-                    MPI_Isend(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,step,MPI_COMM_WORLD);
+                    MPI_Isend(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,-1,MPI_COMM_WORLD);
                     out++;
                     if (out >= size){
                         ok = false;
