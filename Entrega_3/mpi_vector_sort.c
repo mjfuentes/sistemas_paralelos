@@ -60,7 +60,7 @@ void save(int *B, int from, int to, int *A){
 
 int main(int argc, char *argv[]) 
 { 
-    int rank, size, N, i;
+    int rank, size, N, i, max_step;
     int *A, *B;
     int *lcl, *tmp;
  
@@ -86,7 +86,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    lcl = (int*)malloc(sizeof(double)*(N/size)*2);
+    A = (int*)malloc(sizeof(double)*N);
+    B = (int*)malloc(sizeof(double)*N);
+    lcl = (int*)malloc(sizeof(double)*N);
+    tmp = (int*)malloc(sizeof(double)*N);
     int ok = 1;
     int receiving = 1;
     int tag, step, out, stage,max_stage,done;
@@ -94,28 +97,33 @@ int main(int argc, char *argv[])
     max_step = size;
     tmp = (int*)malloc(sizeof(double)*(N/size)*2);
     out=0; step=0; done=0;
+    tag = 0;
 
     //Comienza el ordenado
     while(ok == 1)
     {
+        printf("Proceso %i inicia",rank);
         if(rank != 0){ // Cada uno de los workers
             MPI_Request request;
             MPI_Irecv(&(lcl[0]),N/size*2,MPI_INT,0,tag,MPI_COMM_WORLD,&request); 
-            MPI_Send(&(lcl[0]),0,MPI_INT,0,-1,MPI_COMM_WORLD);
+            MPI_Send(&(lcl[0]),0,MPI_INT,0,0,MPI_COMM_WORLD);
+            printf("Proceso %i pide datos",rank);
             MPI_Status status; 
             MPI_Wait(&request, &status);
             int stage = tag / size;
             int pos = tag % size;
-            if (stage == 0){
-                // stage cero es sort
-                sort(&lcl, N/size);
-                MPI_Send(&(lcl[0]),N/size,MPI_INT,0,tag,MPI_COMM_WORLD);
-            }
-            else if (stage > 0){
-                // stage mayor a cero es merge
-                int half = N / size * (stage - 1);
-                merge(&lcl, 0, half - 1, half*2 - 1);
-                MPI_Send(&(lcl[0]),N/size*2,MPI_INT,0,tag,MPI_COMM_WORLD);
+            if (tag != N){
+                if (stage == 0){
+                    // stage cero es sort
+                    sort(lcl, N/size);
+                    MPI_Send(lcl,N/size,MPI_INT,0,tag,MPI_COMM_WORLD);
+                }
+                else if (stage > 0){
+                    // stage mayor a cero es merge
+                    int half = N / size * (stage - 1);
+                    merge(lcl,tmp, 0, half - 1, half*2 - 1);
+                    MPI_Send(lcl,N/size*2,MPI_INT,0,tag,MPI_COMM_WORLD);
+                }
             }
             else {
                  ok = 0;
@@ -124,7 +132,7 @@ int main(int argc, char *argv[])
         else // master
         {
             MPI_Status status;
-            MPI_Recv(&(lcl[0]),N/size*2,MPI_INT,MPI_ANY_SOURCE,tag,MPI_COMM_WORLD,&status);
+            MPI_Recv(lcl,N/size*2,MPI_INT,MPI_ANY_SOURCE,tag,MPI_COMM_WORLD,&status);
             if (tag == 0){
                 MPI_Request request;
                 if (receiving == 1){
@@ -134,7 +142,7 @@ int main(int argc, char *argv[])
                     }
                     else {
                         int tag = stage * size + step;
-                        MPI_Isend(&(A[step_2*(N/size*2)]),N/size*2,MPI_INT,status.MPI_SOURCE,tag,MPI_COMM_WORLD,&request);
+                        MPI_Isend(&(A[step*(N/size*2)]),N/size*2,MPI_INT,status.MPI_SOURCE,tag,MPI_COMM_WORLD,&request);
                         step = step + 1;
                     }
                     if (step == max_step){
@@ -150,7 +158,7 @@ int main(int argc, char *argv[])
 
                 }
                 else {
-                    MPI_Isend(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,-1,MPI_COMM_WORLD);
+                    MPI_Isend(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,N,MPI_COMM_WORLD,&request);
                     out++;
                     if (out >= size){
                         ok = 0;
