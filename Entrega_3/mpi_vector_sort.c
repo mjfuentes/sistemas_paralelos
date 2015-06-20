@@ -87,9 +87,6 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     MPI_Comm_size(MPI_COMM_WORLD,&size);
-    // if( size % 2 != 0 ){
-    // 	printf("El numero de procesos debe ser par\n");
-    // }
     size = size -1;
     if(argc < 2){
         printf("Se debe indicar el tamaño del vector\n");
@@ -108,7 +105,7 @@ int main(int argc, char *argv[])
     	for(i=0;i<N;i++){
             A[i] = rand()%1000+1;
         }
-        imprimeVector(A,0,N,"");
+        //imprimeVector(A,0,N,"");
         timetick = dwalltime();
     }
     U = (int*)malloc(sizeof(double)*size);
@@ -132,23 +129,22 @@ int main(int argc, char *argv[])
             MPI_Status status; 
             MPI_Recv(&(lcl[0]),N,MPI_INT,0,MPI_ANY_TAG,MPI_COMM_WORLD,&status); 
             MPI_Get_count(&status,MPI_INT,&count);
-            int stage = tag / size;
-            int pos = tag % size;
-            if (count != 0){
-                if (count == 1){
-                    // do nothing
+            tag = status.MPI_TAG;
+            if (tag != 0){
+                if (tag == 3){
+                    // wait recibido
                 }
-                if (count == (N/size)){
+                if (tag == 1){
                     // stage cero es sort
                     // printf("Proceso %i recibe sort\n",rank);
                     // imprimeVector(lcl,0,count,"");
                     sort(lcl, N/size);
                     // printf("Proceso %i devuelve sort\n",rank);
                     // imprimeVector(lcl,0,count,"");
-                    MPI_Send(&(lcl[0]),N/size,MPI_INT,0,0,MPI_COMM_WORLD);
+                    MPI_Send(&(lcl[0]),N/size,MPI_INT,0,1,MPI_COMM_WORLD);
                     //printf("Proceso %i devuelve sort\n",rank);
                 }
-                else if (count > (N/size)){
+                else if (tag == 2){
                     // stage mayor a cero es merge
                     // printf("Proceso %i recibe merge\n",rank);
                     // imprimeVector(lcl,0,count,"");
@@ -156,7 +152,7 @@ int main(int argc, char *argv[])
                     merge(lcl,tmp, 0, half - 1, count - 1);
                     // printf("Proceso %i devuelve merge\n",rank);
                     // imprimeVector(lcl,0,count,"");
-                    MPI_Send(&(lcl[0]),count,MPI_INT,0,0,MPI_COMM_WORLD);
+                    MPI_Send(&(lcl[0]),count,MPI_INT,0,2,MPI_COMM_WORLD);
                 }
             }
             else {
@@ -167,21 +163,22 @@ int main(int argc, char *argv[])
         {
             MPI_Status status;
             MPI_Recv(&(lcl[0]),N,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+            tag = status.MPI_TAG;
+            if (tag == 0){
             MPI_Get_count(&status,MPI_INT,&count);
-            if (count == 0){
                 //printf("MASTER recibe request de %i\n", status.MPI_SOURCE);
                 MPI_Request request;
                 if (receiving == 1){
                     if (stage == 0){
                         U[status.MPI_SOURCE] = step*(N/size);
-                        MPI_Send(&(A[step*(N/size)]),N/size,MPI_INT,status.MPI_SOURCE,tag,MPI_COMM_WORLD);
+                        MPI_Send(&(A[step*(N/size)]),N/size,MPI_INT,status.MPI_SOURCE,1,MPI_COMM_WORLD);
                         //printf("MASTER manda sort a %i\n", status.MPI_SOURCE);
                         //imprimeVector(A,step*(N/size),step*(N/size) + (N/size),"");
                         step = step + 1;
                     }
                     else {
                         U[status.MPI_SOURCE] = step*stage_size;
-                        MPI_Send(&(A[step*stage_size]),stage_size,MPI_INT,status.MPI_SOURCE,tag,MPI_COMM_WORLD);
+                        MPI_Send(&(A[step*stage_size]),stage_size,MPI_INT,status.MPI_SOURCE,2,MPI_COMM_WORLD);
                         //printf("MASTER manda merge a %i\n", status.MPI_SOURCE);
                         step = step + 1;
                     }
@@ -191,21 +188,21 @@ int main(int argc, char *argv[])
                 }
                 else if (receiving == 2){
                     //printf("MASTER manda wait a %i\n", status.MPI_SOURCE);
-                    MPI_Send(&(lcl[0]),1,MPI_INT,status.MPI_SOURCE,N,MPI_COMM_WORLD);
+                    MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,3,MPI_COMM_WORLD);
                 }
                 else if (receiving == 0){
                     //printf("MASTER manda close a %i\n", status.MPI_SOURCE);
-                    MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,N,MPI_COMM_WORLD);
+                    MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,0,MPI_COMM_WORLD);
                     out++;
                     if (out >= size){
                         ok = 0;
                         printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
-                        imprimeVector(A,0,N,"");
+                        //imprimeVector(A,0,N,"");
                     }
                 }
             }
             else {
-                if (stage == 0){
+                if (tag == 1){
                     //printf("MASTER recibe sort de %i\n",status.MPI_SOURCE);
                     int temp = U[status.MPI_SOURCE];
                     save(A,temp,temp + (N/size) - 1,lcl);

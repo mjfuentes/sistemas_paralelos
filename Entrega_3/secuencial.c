@@ -91,6 +91,8 @@ int main(int argc,char*argv[]){
 		D[i] = rand()%100+1;
 	}
 
+  timetick = dwalltime();
+
 	int l;
 	double *col_res;
 	col_res=(double*)malloc(sizeof(double)*N);
@@ -98,7 +100,7 @@ int main(int argc,char*argv[]){
 	// Merge sort al vector
 	mergeSort(D,col_res,0,N-1);
 	
-	imprimeVector(D,N,"vector ordenado");
+	//imprimeVector(D,N,"vector ordenado");
 	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
 
 free(D);
