@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
                     merge(lcl,tmp, 0, half - 1, count - 1);
                     // printf("Proceso %i devuelve merge\n",rank);
                     // imprimeVector(lcl,0,count,"");
-                    MPI_Send(&(lcl[0]),count,MPI_INT,0,2,MPI_COMM_WORLD);
+                    MPI_Send(&(lcl[0]),count,MPI_INT,0,1,MPI_COMM_WORLD);
                 }
             }
             else {
@@ -162,11 +162,16 @@ int main(int argc, char *argv[])
         else // master
         {
             MPI_Status status;
-            MPI_Recv(&(lcl[0]),N,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+            if (receiving == 1 || receiving == 0){
+                MPI_Recv(&(lcl[0]),N,MPI_INT,MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+            }
+            else if (receiving == 2){
+                MPI_Recv(&(lcl[0]),N,MPI_INT,MPI_ANY_SOURCE,1,MPI_COMM_WORLD,&status);
+            }
             tag = status.MPI_TAG;
             if (tag == 0){
-            MPI_Get_count(&status,MPI_INT,&count);
-                //printf("MASTER recibe request de %i\n", status.MPI_SOURCE);
+                MPI_Get_count(&status,MPI_INT,&count);
+                printf("MASTER recibe request de %i\n", status.MPI_SOURCE);
                 MPI_Request request;
                 if (receiving == 1){
                     if (stage == 0){
@@ -186,10 +191,6 @@ int main(int argc, char *argv[])
                         receiving = 2;
                     }
                 }
-                else if (receiving == 2){
-                    //printf("MASTER manda wait a %i\n", status.MPI_SOURCE);
-                    MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,3,MPI_COMM_WORLD);
-                }
                 else if (receiving == 0){
                     //printf("MASTER manda close a %i\n", status.MPI_SOURCE);
                     MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,0,MPI_COMM_WORLD);
@@ -202,7 +203,7 @@ int main(int argc, char *argv[])
                 }
             }
             else {
-                if (tag == 1){
+                if (stage == 0){
                     //printf("MASTER recibe sort de %i\n",status.MPI_SOURCE);
                     int temp = U[status.MPI_SOURCE];
                     save(A,temp,temp + (N/size) - 1,lcl);
@@ -229,9 +230,7 @@ int main(int argc, char *argv[])
                         receiving = 0;
                     }
                 }
-
             }
-        
         }
     }
  
