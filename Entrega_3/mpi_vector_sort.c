@@ -40,18 +40,29 @@ void merge(int *col,int *col_res, int inicio, int mid, int final)
     }
 }
 
-void sort(int *C, int N){
-    int l,j;
-    for (l=0;l<N-1;l++){
-        for(j=0;j<N-l;j++){
-            if (C[j] < C[j+1]){
-                int temp = C[j];
-                C[j] = C[j+1];
-                C[j+1] = temp;
-            }
-        }
-    }
+void mergeSort(int *col,int *col_res, int inicio, int final)
+{
+    if (inicio == final) return;
+    int mid = (inicio + final)/2;
+    mergeSort(col,col_res, inicio, mid);
+    mergeSort(col,col_res,mid+1, final);
+    merge(col,col_res, inicio, mid, final);
 }
+
+// void mergeSort(int *col,int *col_res, double size){
+//     int i;
+//     int j;
+//     int inicio, mid, final;
+//     for (i=size; i>0; i=i/2){
+//         for (j=0; j<i; j++){
+//                 inicio = j * size/i;
+//                 final = inicio + size/i;
+//                 mid = (inicio + final)/2 - 1;
+//             merge(col, col_res, inicio,mid, final-1);
+//         }
+//     }
+// }
+
 
 double dwalltime(){
     double sec;
@@ -127,7 +138,8 @@ int main(int argc, char *argv[])
             MPI_Get_count(&status,MPI_INT,&count);
             tag = status.MPI_TAG;
             if (tag == 1){
-                sort(lcl, N/size);
+                timetick = dwalltime();
+                mergeSort(lcl,tmp,0, N/size);
                 MPI_Send(&(lcl[0]),N/size,MPI_INT,0,1,MPI_COMM_WORLD);
             }
             else if (tag == 2){

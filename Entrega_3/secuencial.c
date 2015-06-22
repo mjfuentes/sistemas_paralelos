@@ -17,17 +17,17 @@ double pow (double base , double exponent);
 float powf (float base  , float exponent);
 long double powl (long double base, long double exponent);
 
-void imprimeVector(double *S,int N,char comment[]){
+void imprimeVector(int *S,int N,char comment[]){
 		int i,j,I,J,despB;
 		printf("%s",comment);
 		printf("Contenido del vector: \n" );
 		for(j=0;j<N;j++){
-			printf("%f ",S[j]);
+			printf("%i ",S[j]);
 		}
 		printf("\n\n");
 }
 
-void merge(double *col,double *col_res, int inicio, int mid, int final)
+void merge(int *col,int *col_res, int inicio, int mid, int final)
 {
 	int i = inicio, j = mid + 1, k = inicio;
 	while (i <= mid && j <= final)
@@ -61,21 +61,34 @@ void merge(double *col,double *col_res, int inicio, int mid, int final)
 	}
 }
 
-void mergeSort(double *col,double *col_res, int inicio, int final)
+// void mergeSort(int *col,int *col_res, double size){
+//     int i;
+//     int j;
+//     int inicio, mid, final;
+//     for (i=size; i>0; i=i/2){
+//         for (j=0; j<i; j++){
+//         		inicio = j * size/i;
+//         		final = inicio + size/i;
+//         		mid = (inicio + final)/2 - 1;
+//             merge(col, col_res, inicio,mid, final-1);
+//         }
+//     }
+// }
+
+void mergeSort(int *col,int *col_res, int inicio, int final)
 {
-	if (inicio == final) return;
-	int mid = (inicio + final)/2;
-	mergeSort(col,col_res, inicio, mid);
-	mergeSort(col,col_res,mid+1, final);
-	merge(col,col_res, inicio, mid, final);
+    if (inicio == final) return;
+    int mid = (inicio + final)/2;
+    mergeSort(col,col_res, inicio, mid);
+    mergeSort(col,col_res,mid+1, final);
+    merge(col,col_res, inicio, mid, final);
 }
 
 int main(int argc,char*argv[]){
-	double *D;
+	int *D, *D2;
 	int i,j,k,N;
 	int check=1;
 	double timetick;
-
 	if (argc < 2){
 		printf("\n Falta un argumento:: N dimension del vector \n");
 		return 0;
@@ -83,7 +96,8 @@ int main(int argc,char*argv[]){
 	N=atoi(argv[1]);
 
    //Aloca memoria para el vector
-	D=(double*)malloc(sizeof(double)*N);
+	D=(int*)malloc(sizeof(int)*N);
+	D2=(int*)malloc(sizeof(int)*N);
 
    //Inicializa el vector con numeros random
 	srand(time(0));
@@ -91,19 +105,15 @@ int main(int argc,char*argv[]){
 		D[i] = rand()%100+1;
 	}
 
-  timetick = dwalltime();
-
-	int l;
-	double *col_res;
-	col_res=(double*)malloc(sizeof(double)*N);
+  	timetick = dwalltime();
 
 	// Merge sort al vector
-	mergeSort(D,col_res,0,N-1);
+	mergeSort(D,D2,0,N);
 	
-	//imprimeVector(D,N,"vector ordenado");
+	imprimeVector(D,N,"vector ordenado");
 	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
 
 free(D);
-free(col_res);
+free(D2);
 return(0);
 }
