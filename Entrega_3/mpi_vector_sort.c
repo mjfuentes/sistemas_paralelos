@@ -49,20 +49,6 @@ void mergeSort(int *col,int *col_res, int inicio, int final)
     merge(col,col_res, inicio, mid, final);
 }
 
-// void mergeSort(int *col,int *col_res, double size){
-//     int i;
-//     int j;
-//     int inicio, mid, final;
-//     for (i=size; i>0; i=i/2){
-//         for (j=0; j<i; j++){
-//                 inicio = j * size/i;
-//                 final = inicio + size/i;
-//                 mid = (inicio + final)/2 - 1;
-//             merge(col, col_res, inicio,mid, final-1);
-//         }
-//     }
-// }
-
 
 double dwalltime(){
     double sec;
@@ -91,7 +77,7 @@ void imprimeVector(int *S,int from, int N,char comment[]){
 
 int main(int argc, char *argv[]) 
 { 
-    int rank, size, N, i, max_step;
+    int rank, size, N, i, max_step, M;
     int tag, step, out, stage, done, count, ok, receiving;
     int *A, *U, *lcl, *tmp;
     double timetick;
@@ -100,7 +86,6 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD,&size);
     size = size -1;
     out=0;step=0; done=0;stage = 0;ok=1;receiving=1;
-    max_step = size;
     MPI_Status status;
     MPI_Request request;
     
@@ -115,10 +100,22 @@ int main(int argc, char *argv[])
             MPI_Abort(MPI_COMM_WORLD,1);
         }
     }
+    if(argc < 3){
+        printf("Se debe indicar el tamaño de la porcion\n");
+        MPI_Abort(MPI_COMM_WORLD,1);
+    }
+    else {
+        M = atoi(argv[2]);
+        if (N % M != 0){
+            printf("Tamaño de porcion inadecuado\n");
+            MPI_Abort(MPI_COMM_WORLD,1);
+        }
+        max_step = N/M; 
+    }
     if(rank == 0){
         printf("Cantidad de workers: %i\n",size);
-        printf("tamaño de bloque por worker: %i\n", N/size);
         A = (int*)malloc(sizeof(double)*N);
+        U = (int*)malloc(sizeof(int)*N);
         srand(time(0));
     	for(i=0;i<N;i++){
             A[i] = rand()%1000+1;
@@ -126,10 +123,11 @@ int main(int argc, char *argv[])
         timetick = dwalltime();
     }
 
-    U = (int*)malloc(sizeof(int)*N);
+    MPI_Barrier(MPI_COMM_WORLD);
+    
     lcl = (int*)malloc(sizeof(int)*N);
     tmp = (int*)malloc(sizeof(int)*N);
-    int stage_size = (N/size);
+    int stage_size = M;
     while(ok == 1)
     {
         if(rank != 0){ 
@@ -138,8 +136,8 @@ int main(int argc, char *argv[])
             MPI_Get_count(&status,MPI_INT,&count);
             tag = status.MPI_TAG;
             if (tag == 1){
-                mergeSort(lcl,tmp,0, N/size);
-                MPI_Send(&(lcl[0]),N/size,MPI_INT,0,1,MPI_COMM_WORLD);
+                mergeSort(lcl,tmp,0, M);
+                MPI_Send(&(lcl[0]),M,MPI_INT,0,1,MPI_COMM_WORLD);
             }
             else if (tag == 2){
                 int half = count/2;
@@ -163,8 +161,8 @@ int main(int argc, char *argv[])
                 MPI_Request request;
                 if (receiving == 1){
                     if (stage == 0){
-                        U[status.MPI_SOURCE] = step*(N/size);
-                        MPI_Send(&(A[step*(N/size)]),N/size,MPI_INT,status.MPI_SOURCE,1,MPI_COMM_WORLD);
+                        U[status.MPI_SOURCE] = step*M;
+                        MPI_Send(&(A[step*M]),M,MPI_INT,status.MPI_SOURCE,1,MPI_COMM_WORLD);
                     }
                     else {
                         U[status.MPI_SOURCE] = step*stage_size;
