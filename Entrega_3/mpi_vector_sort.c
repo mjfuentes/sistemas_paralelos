@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            if (receiving == 1){
+            if ((step > 0) && (step % (size-1) == 0)){
                 if (stage == 0){   
                     mergeSort(A,tmp,step*M, step*M + M -1);
                     
