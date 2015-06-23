@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
             MPI_Get_count(&status,MPI_INT,&count);
             tag = status.MPI_TAG;
             if (tag == 1){
-                timetick = dwalltime();
                 mergeSort(lcl,tmp,0, N/size);
                 MPI_Send(&(lcl[0]),N/size,MPI_INT,0,1,MPI_COMM_WORLD);
             }
@@ -180,8 +179,8 @@ int main(int argc, char *argv[])
                     MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,3,MPI_COMM_WORLD);
                     out++;
                     if (out >= size){
-                        printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
                         //imprimeVector(A,0,N,"");
+                        printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
                         break;
                     }
                 }
