@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     MPI_Comm_size(MPI_COMM_WORLD,&size);
-    size = size -1;
+    //size = size -1;
     out=0;step=0; done=0;stage = 0;ok=1;receiving=1;
     MPI_Status status;
     MPI_Request request;
@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
         }
         max_step = N/M; 
     }
+
     if(rank == 0){
         printf("Cantidad de workers: %i\n",size);
         A = (int*)malloc(sizeof(double)*N);
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
         timetick = dwalltime();
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
     
     lcl = (int*)malloc(sizeof(int)*N);
     tmp = (int*)malloc(sizeof(int)*N);
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
                 else if (receiving == 0){
                     MPI_Send(&(lcl[0]),0,MPI_INT,status.MPI_SOURCE,3,MPI_COMM_WORLD);
                     out++;
-                    if (out >= size){
+                    if (out == size - 1){
                         //imprimeVector(A,0,N,"");
                         printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
                         break;
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
                 int temp = U[status.MPI_SOURCE];
                 save(A,temp,temp + count - 1, lcl);
                 done++;
-                if ((receiving == 2) && (done == max_step)){
+                if ((receiving == 2) && (done >= max_step)){
                     if (max_step > 1){
                         step = 0;done = 0;receiving = 1;
                         max_step = max_step / 2;
@@ -200,6 +201,34 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            if (receiving == 1){
+                if (stage == 0){
+                    
+                    mergeSort(A,tmp,step*M, step*M + M -1);
+                    
+                }
+                else {
+                    int half = stage_size/2;
+                    merge(A,tmp, step*stage_size, step*stage_size + half - 1, step*stage_size + stage_size - 1);
+
+                }
+                step++;
+                done++;
+                if (step == max_step){
+                    receiving = 2;
+                }
+                if ((receiving == 2) && (done >= max_step)){
+                    if (max_step > 1){
+                        step = 0;done = 0;receiving = 1;
+                        max_step = max_step / 2;
+                        stage++;
+                        stage_size = stage_size * 2;
+                    }
+                    else {
+                        receiving = 0;
+                    }
+                }
+            }       
         }
     }
     MPI_Finalize();
