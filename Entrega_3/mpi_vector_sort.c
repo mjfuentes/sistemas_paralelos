@@ -202,30 +202,28 @@ int main(int argc, char *argv[])
                 }
             }
             if (receiving == 1){
-                if (stage == 0){
-                    
+                if (stage == 0){   
                     mergeSort(A,tmp,step*M, step*M + M -1);
                     
                 }
                 else {
                     int half = stage_size/2;
                     merge(A,tmp, step*stage_size, step*stage_size + half - 1, step*stage_size + stage_size - 1);
-
                 }
                 step++;
                 done++;
                 if (step == max_step){
                     receiving = 2;
-                }
-                if ((receiving == 2) && (done >= max_step)){
-                    if (max_step > 1){
-                        step = 0;done = 0;receiving = 1;
-                        max_step = max_step / 2;
-                        stage++;
-                        stage_size = stage_size * 2;
-                    }
-                    else {
-                        receiving = 0;
+                     if (done >= max_step){
+                        if (max_step > 1){
+                            step = 0;done = 0;receiving = 1;
+                            max_step = max_step / 2;
+                            stage++;
+                            stage_size = stage_size * 2;
+                        }
+                        else {
+                            receiving = 0;
+                        }
                     }
                 }
             }       
