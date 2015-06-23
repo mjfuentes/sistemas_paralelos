@@ -110,7 +110,7 @@ int main(int argc,char*argv[]){
 	// Merge sort al vector
 	mergeSort(D,D2,0,N);
 	
-	imprimeVector(D,N,"vector ordenado");
+	//imprimeVector(D,N,"vector ordenado");
 	printf("Tiempo en segundos total: %f\n\n", dwalltime() - timetick);  
 
 free(D);
